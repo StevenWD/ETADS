@@ -1,0 +1,12 @@
+python3 preprocess.py -train_src data/cnndm/train.txt.src \
+                     -train_tgt data/cnndm/train.txt.tgt.tagged \
+                     -valid_src data/cnndm/val.txt.src \
+                     -valid_tgt data/cnndm/val.txt.tgt.tagged \
+                     -save_data data/cnndm/CNNDM \
+                     -src_seq_length 10000 \
+                     -tgt_seq_length 10000 \
+                     -src_seq_length_trunc 400 \
+                     -tgt_seq_length_trunc 100 \
+                     -dynamic_dict \
+                     -share_vocab \
+                     -shard_size 100000
