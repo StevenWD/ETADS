@@ -85,6 +85,8 @@ class MultiHeadedAttention(nn.Module):
 
         if with_focus_attention:
             self.linear_focus_query = nn.Linear(head_count * self.dim_per_head,head_count * self.dim_per_head)
+            self.linear_focus_global = nn.Linear(head_count * self.dim_per_head, head_count * self.dim_per_head)
+
             up = torch.randn(head_count, 1, self.dim_per_head)
             self.up = Variable(up, requires_grad=True).cuda()
             torch.nn.init.xavier_uniform_(self.up)
@@ -212,9 +214,12 @@ class MultiHeadedAttention(nn.Module):
 
 
         if self.with_focus_attention == True:
-            c = self.tanh(self.linear_focus_query(query))
+            glo = torch.mean(query, dim=1, keepdim=True)
+
+            c = self.tanh(self.linear_focus_query(query) + self.linear_focus_global(glo))
+            # c = self.tanh(self.linear_focus_query(query))#  + self.linear_focus_global(glo))
             c = shape(c)
-            
+
             p = c * self.up
             p = p.sum(3).squeeze()
             z = c * self.uz
@@ -233,16 +238,16 @@ class MultiHeadedAttention(nn.Module):
         if self.with_saliency_selection == True:
             # gate_key = self.linear_selection_key(unshape(key))
             # gate_query = self.linear_selection_query(unshape(query))
-            
+
             # gate_key = shape(gate_key)
             # gate_query = shape(gate_query)
-            
+
             gate = self.sigmoid(torch.matmul(selection_query, selection_key.transpose(2, 3)))
 
         key_len = key.size(2)
         query_len = query.size(2)
 
-        
+
         # 2) Calculate and scale scores.
         query = query / math.sqrt(dim_per_head)
 
@@ -295,6 +300,3 @@ class MultiHeadedAttention(nn.Module):
             .contiguous()
 
         return output, top_attn
-
-    def update_dropout(self, dropout):
-        self.dropout.p = dropout
